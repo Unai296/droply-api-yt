@@ -280,10 +280,60 @@
 
 
 
+  <!-- ══ PAGE: IMPORT (Exportify CSV) ══ -->
+  <div class="page" id="pageImport">
+    <div class="library-header">
+      <h2 class="library-title">Importar de Spotify</h2>
+    </div>
+    <div style="padding:1.5rem 1rem 2rem;max-width:520px;margin:0 auto">
+      <p style="color:var(--text-mid);font-size:.85rem;margin-bottom:1.5rem;line-height:1.6">
+        Exporta tu playlist con <a href="https://exportify.net" target="_blank" rel="noopener" style="color:var(--accent)">exportify.net</a> y sube el CSV. Droply buscará cada canción en el catálogo CC de Jamendo.
+      </p>
+      <div class="import-dropzone" id="importDropZone" style="border:2px dashed var(--border);border-radius:16px;padding:2.5rem 1rem;text-align:center;cursor:pointer;transition:border-color .2s">
+        <svg viewBox="0 0 24 24" width="36" height="36" style="margin:0 auto 1rem;opacity:.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <p style="font-weight:600;margin-bottom:.25rem">Arrastra tu CSV aquí</p>
+        <p style="color:var(--text-soft);font-size:.8rem;margin-bottom:1rem">o pulsa para seleccionar</p>
+        <button class="btn-hero" id="importBrowseBtn" style="font-size:.8rem;padding:.55rem 1.4rem">Seleccionar archivo</button>
+        <input type="file" id="importFileInput" accept=".csv,.txt" style="display:none" />
+      </div>
+      <div id="importProgress" style="display:none;margin-top:1.2rem">
+        <div style="height:4px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-bottom:.6rem">
+          <div id="importProgressFill" style="height:100%;width:0%;background:var(--accent);border-radius:99px;transition:width .3s"></div>
+        </div>
+        <p id="importProgressTxt" style="color:var(--text-mid);font-size:.8rem;text-align:center"></p>
+      </div>
+      <div id="importResult" style="display:none;margin-top:1.5rem"></div>
+    </div>
+  </div>
 
+  <!-- ══ PAGE: LOCAL MUSIC ══ -->
+  <div class="page" id="pageLocal">
+    <div class="library-header" style="display:flex;align-items:center;justify-content:space-between">
+      <h2 class="library-title">Música local</h2>
+      <label class="btn-create-playlist" style="cursor:pointer;display:inline-flex;align-items:center;gap:.4rem">
+        <svg viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Añadir
+        <input type="file" accept="audio/*" multiple style="display:none" id="localFileInput"
+          onchange="if(typeof addLocalFiles==='function'){addLocalFiles(this.files);this.value='';}">
+      </label>
+    </div>
+    <div class="local-track-list library-list"></div>
+  </div>
 
+  <!-- ══ PAGE: DOWNLOADS ══ -->
+  <div class="page" id="pageDownloads">
+    <div class="library-header">
+      <h2 class="library-title">Descargas</h2>
+    </div>
+    <div id="downloadsList" style="padding:1rem;text-align:center;padding-top:3rem">
+      <svg viewBox="0 0 24 24" width="40" height="40" style="margin:0 auto 1rem;display:block;opacity:.3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <p style="color:var(--text-mid);font-size:.9rem">Sin descargas.<br><span style="font-size:.8rem;color:var(--text-soft)">Usa el menu en cualquier cancion para guardar offline.</span></p>
+    </div>
+  </div>
 
-  <!-- ══ PLAYLIST DETAIL PAGE (full-screen) ══ -->
+  </div><!-- /.pages-container -->
+
+    <!-- ══ PLAYLIST DETAIL PAGE (full-screen) ══ -->
   <div class="playlist-page" id="playlistDetailModal">
     <!-- Blurred bg -->
     <div class="playlist-page-bg" id="playlistPageBg"></div>
@@ -832,6 +882,9 @@
   })();
   </script>
 
+  <script src="jamendo.js"></script>
+  <script src="mixes.js"></script>
+  <script src="playlist-import.js"></script>
   <script src="script.js"></script>
   <script src="youtube.js"></script>
   
