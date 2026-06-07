@@ -10,7 +10,7 @@
   <meta name="theme-color" content="#080808" />
   <meta name="description" content="DROPLY — Streaming musical sin anuncios" />
 
-  <title>DROPLY — Plataforma Multimedia</title>
+  <title>DROPLY Music</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png" />
@@ -116,16 +116,7 @@
           </div>
         </section>
 
-        <!-- 3b. MIXES -->
-        <section class="home-section" id="homeMixesSection">
-          <div class="home-section-header">
-            <h2 class="home-section-title">Albums</h2>
-            <button class="home-section-link" data-page="pageMixes">Ver todo</button>
-          </div>
-          <div class="home-hscroll-wrap">
-            <div class="home-hscroll home-mixes-row" id="homeMixesRow"></div>
-          </div>
-        </section>
+
 
         <!-- 4. RECENTLY PLAYED -->
         <section class="home-section" id="homeRecentSection" style="display:none">
@@ -250,13 +241,7 @@
 
 
 
-    <!-- PAGE: MIXES -->
-    <div class="page" id="pageMixes">
-      <div class="library-header mixes-page-header">
-        <h2 class="library-title">Albums</h2>
-      </div>
-      <div id="mixesGrid" class="mixes-grid"></div>
-    </div>
+
 
     <!-- PAGE: PLAYLISTS -->
     <div class="page" id="pagePlaylists">
@@ -280,31 +265,7 @@
 
 
 
-  <!-- ══ PAGE: IMPORT (Exportify CSV) ══ -->
-  <div class="page" id="pageImport">
-    <div class="library-header">
-      <h2 class="library-title">Importar de Spotify</h2>
-    </div>
-    <div style="padding:1.5rem 1rem 2rem;max-width:520px;margin:0 auto">
-      <p style="color:var(--text-mid);font-size:.85rem;margin-bottom:1.5rem;line-height:1.6">
-        Exporta tu playlist con <a href="https://exportify.net" target="_blank" rel="noopener" style="color:var(--accent)">exportify.net</a> y sube el CSV. Droply buscará cada canción en el catálogo CC de Jamendo.
-      </p>
-      <div class="import-dropzone" id="importDropZone" style="border:2px dashed var(--border);border-radius:16px;padding:2.5rem 1rem;text-align:center;cursor:pointer;transition:border-color .2s">
-        <svg viewBox="0 0 24 24" width="36" height="36" style="margin:0 auto 1rem;opacity:.4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <p style="font-weight:600;margin-bottom:.25rem">Arrastra tu CSV aquí</p>
-        <p style="color:var(--text-soft);font-size:.8rem;margin-bottom:1rem">o pulsa para seleccionar</p>
-        <button class="btn-hero" id="importBrowseBtn" style="font-size:.8rem;padding:.55rem 1.4rem">Seleccionar archivo</button>
-        <input type="file" id="importFileInput" accept=".csv,.txt" style="display:none" />
-      </div>
-      <div id="importProgress" style="display:none;margin-top:1.2rem">
-        <div style="height:4px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-bottom:.6rem">
-          <div id="importProgressFill" style="height:100%;width:0%;background:var(--accent);border-radius:99px;transition:width .3s"></div>
-        </div>
-        <p id="importProgressTxt" style="color:var(--text-mid);font-size:.8rem;text-align:center"></p>
-      </div>
-      <div id="importResult" style="display:none;margin-top:1.5rem"></div>
-    </div>
-  </div>
+
 
   <!-- ══ PAGE: LOCAL MUSIC ══ -->
   <div class="page" id="pageLocal">
@@ -376,39 +337,9 @@
     </div>
   </div>
 
-  <!-- ══ MIX DETAIL PAGE ══ -->
-  <div class="playlist-page" id="mixDetailModal">
-    <div class="playlist-page-bg" id="mixDetailBg"></div>
-    <div class="playlist-page-topbar">
-      <button class="playlist-page-back" id="mixDetailClose" aria-label="Volver">
-        <svg viewBox="0 0 24 24" width="22" height="22"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <span class="playlist-page-topbar-title" id="mixDetailTopTitle"></span>
-      <div style="width:36px"></div>
-    </div>
-    <div class="playlist-page-scroll">
-      <div class="playlist-page-hero">
-        <div class="playlist-detail-cover mix-detail-cover" id="mixDetailCover"></div>
-        <div class="playlist-page-meta">
-          <p class="playlist-detail-label mix-detail-type-label">ALBUMS</p>
-          <h1 class="playlist-detail-name" id="mixDetailName">—</h1>
-          <p class="mix-detail-desc" id="mixDetailDesc"></p>
-          <p class="playlist-detail-count" id="mixDetailCount">0 canciones</p>
-        </div>
-      </div>
-      <div class="playlist-page-actions">
-        <button class="playlist-page-shuffle-btn" id="btnShuffleMix" aria-label="Aleatorio">
-          <svg viewBox="0 0 24 24" width="20" height="20"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-        </button>
-        <button class="playlist-page-play-btn" id="btnPlayMix" aria-label="Reproducir todo">
-          <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>
-        </button>
-      </div>
-      <div class="playlist-detail-list" id="mixDetailList"></div>
-    </div>
-  </div>
 
-  <!-- ══ GENRE DETAIL PAGE (full-screen, same style as playlist-page) ══ -->
+
+    <!-- ══ GENRE DETAIL PAGE (full-screen, same style as playlist-page) ══ -->
   <div class="playlist-page" id="genreDetailModal">
     <!-- Blurred bg -->
     <div class="playlist-page-bg" id="genrePageBg"></div>
@@ -660,9 +591,9 @@
       <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
       <span>Playlists</span>
     </button>
-    <button class="bnav-btn" data-page="pageMixes" aria-label="Mixes">
+    <button class="bnav-btn" data-page="pageLocal" aria-label="Local">
       <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-      <span>Albums</span>
+      <span>Local</span>
     </button>
   </nav>
 
@@ -882,9 +813,6 @@
   })();
   </script>
 
-  <script src="jamendo.js"></script>
-  <script src="mixes.js"></script>
-  <script src="playlist-import.js"></script>
   <script src="script.js"></script>
   <script src="youtube.js"></script>
   

@@ -37,18 +37,16 @@
 ══════════════════════════════════════════════════ */
 const CHANGELOG = [
   {
-    version: 'v6.0',
+    version: 'v7.0',
     date:    '7 de Junio 2026',
-    title:   'Droply Legal Edition',
+    title:   'Droply — YouTube Edition',
     emoji:   '🎵',
     changes: [
-      { icon: '✅', text: 'Catálogo legal: más de 600.000 canciones Creative Commons vía Jamendo.' },
-      { icon: '📂', text: 'Importa tus playlists de Spotify: descarga con Exportify y súbelas aquí.' },
-      { icon: '🎵', text: 'Añade tu propia música local desde el dispositivo.' },
-      { icon: '🔍', text: 'Búsqueda en tiempo real en todo el catálogo legal.' },
-      { icon: '📻', text: 'Radio por género: streams infinitos de música CC.' },
-      { icon: '⚡', text: 'Reproducción en segundo plano, pantalla bloqueada, MediaSession.' },
-      { icon: '📱', text: '100% publicable en Google Play y App Store.' },
+      { icon: '🎵', text: 'YouTube como fuente principal: busca cualquier canción.' },
+      { icon: '🔒', text: 'Reproducción con pantalla bloqueada: audio nativo en vez de IFrame.' },
+      { icon: '⚡', text: 'MediaSession completo: controles en notificación y lock screen.' },
+      { icon: '📂', text: 'Añade tu propia música local desde el dispositivo.' },
+      { icon: '🎚️', text: 'Cola de reproducción, shuffle, repeat y favoritos.' },
     ]
   }
 ];
@@ -122,9 +120,9 @@ let shuffleMode      = false;
 let repeatMode       = false;
 let contextTarget    = null;
 
-// Jamendo catalog cache
-let _jamFeatured     = [];
-let _jamLoaded       = false;
+// YouTube search cache for home screen
+let _ytFeatured      = [];
+let _ytLoaded        = false;
 
 /* ══════════════════════════════════════════════════
    4. DOM REFS
@@ -239,8 +237,8 @@ function updatePlayIcons(playing) {
 }
 
 function getTrackByFile(file) {
-  // Check Jamendo catalog + local
-  const all = [..._jamFeatured, ...localTracks,
+  // Check YouTube results + local
+  const all = [..._ytFeatured, ...localTracks,
     ...playlists.flatMap(p => p.tracks.map(t => typeof t === 'string' ? null : t).filter(Boolean))
   ];
   return all.find(m => m && m.file === file) || null;
@@ -291,9 +289,8 @@ function showPage(pageId) {
   });
   if (pageId === 'pageFavoritos') renderFavoritos();
   if (pageId === 'pagePlaylists') renderPlaylists();
-  if (pageId === 'pageImport')    renderImportPage();
   if (pageId === 'pageLocal')     renderLocalPage();
-  if (pageId === 'pageMixes')     MixesManager?.renderGrid();
+  if (pageId === 'pageLocal')     renderLocalPage();
   if (pageId === 'pageDownloads') {
     if (typeof OfflineManager !== 'undefined') OfflineManager.renderDownloadsList();
     if (typeof renderOfflinePlaylist === 'function') renderOfflinePlaylist();
@@ -400,14 +397,14 @@ if (ctxSheetOffline) {
 }
 
 /* ══════════════════════════════════════════════════
-   9. HOME SCREEN — Jamendo powered
+   9. HOME SCREEN — YouTube powered
 ══════════════════════════════════════════════════ */
 async function renderHomeScreen() {
   // Continue listening
   const continueSection = $('homeContinueSection');
   if (historyTracks.length > 0) {
     const lastFile  = historyTracks[0].file;
-    const lastTrack = _jamFeatured.find(t => t.file === lastFile) || localTracks.find(t => t.file === lastFile);
+    const lastTrack = _ytFeatured.find(t => t.file === lastFile) || localTracks.find(t => t.file === lastFile);
     if (lastTrack) {
       const cover = lastTrack.cover || getPlaceholderCover(lastTrack.category);
       const hccCover  = $('hccCover');
@@ -439,15 +436,20 @@ async function renderHomeScreen() {
       </div>`).join('');
 
     try {
-      const featured = await JamendoEngine.getFeatured(30);
-      _jamFeatured   = [..._jamFeatured, ...featured];
+      // Load YouTube trending music via search
+      let featured = _ytFeatured;
+      if (!_ytLoaded && window.DroplyYT) {
+        featured = await window.DroplyYT.search('trending music 2025');
+        _ytFeatured = featured;
+        _ytLoaded = true;
+      }
       featGrid.innerHTML = '';
       const picks = shuffleArray(featured).slice(0, 12);
       picks.forEach(item => {
         featGrid.appendChild(_buildHomeTrackCard(item, featured));
       });
     } catch (e) {
-      featGrid.innerHTML = '<p style="color:var(--text-soft);padding:1rem;font-size:.85rem">Error cargando canciones. Comprueba tu conexión.</p>';
+      featGrid.innerHTML = '<p style="color:var(--text-soft);padding:1rem;font-size:.85rem">Busca canciones de YouTube arriba ↑</p>';
     }
   }
 
@@ -497,7 +499,7 @@ function _buildHomeTrackCard(item, contextList) {
       <button class="home-track-more-btn" aria-label="Más opciones">
         <svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.3" fill="currentColor" stroke="none"/></svg>
       </button>
-      ${item.source === 'jamendo' ? '<span class="cc-badge" title="Creative Commons">CC</span>' : ''}
+      ${item.source === 'youtube' ? '<span class="yt-online-badge" title="YouTube">YT</span>' : ''}
     </div>
     <p class="home-track-title">${item.title}</p>
     <p class="home-track-artist">${item.artist}</p>`;
@@ -533,7 +535,10 @@ function _buildHomeTrackCard(item, contextList) {
     if (modal) { modal.classList.add('open'); document.body.style.overflow = 'hidden'; }
 
     try {
-      const items = await JamendoEngine.getByTag(tag, 40);
+      if (!window.DroplyYT) throw new Error('Motor no disponible');
+      const items = await window.DroplyYT.search(tag);
+      // Cache para findTrack
+      items.forEach(r => { if (!_ytFeatured.find(t => t._ytId === r._ytId)) _ytFeatured.push(r); });
       _currentGenreTracks = items;
       if (countEl) countEl.textContent = `${items.length} canciones`;
       const imgs = items.slice(0,4).map(m => m.cover).filter(Boolean);
@@ -575,7 +580,7 @@ function _buildHomeTrackCard(item, contextList) {
 })();
 
 /* ══════════════════════════════════════════════════
-   11. SEARCH — Jamendo powered
+   11. SEARCH — YouTube powered (via youtube.js)
 ══════════════════════════════════════════════════ */
 let _searchTimeout;
 let _searchAbort = null;
@@ -590,8 +595,14 @@ searchInput?.addEventListener('input', () => {
   _searchTimeout = setTimeout(async () => {
     if (_searchAbort) _searchAbort.abort();
     try {
-      const results = await JamendoEngine.search(q, 30);
+      if (!window.DroplyYT) {
+        searchResults.innerHTML = `<p style="color:var(--text-soft);padding:2rem;text-align:center">Motor de búsqueda no disponible.</p>`;
+        return;
+      }
+      const results = await window.DroplyYT.search(q);
       if (searchInput.value.trim() !== q) return; // stale
+      // Cache results for findTrack
+      results.forEach(r => { if (!_ytFeatured.find(t => t._ytId === r._ytId)) _ytFeatured.push(r); });
       renderSearchResults(results, q);
     } catch (e) {
       searchResults.innerHTML = `<p style="color:var(--text-soft);padding:2rem;text-align:center">Error en la búsqueda. Comprueba tu conexión.</p>`;
@@ -608,7 +619,7 @@ function renderSearchResults(results, q) {
   // Section label
   const label = document.createElement('p');
   label.className = 'search-section-label';
-  label.textContent = `${results.length} canciones Creative Commons`;
+  label.textContent = `${results.length} resultados en YouTube`;
   searchResults.appendChild(label);
 
   results.forEach(item => {
@@ -653,11 +664,30 @@ searchClear?.addEventListener('click', () => {
   searchBrowse.style.display = ''; searchResults.style.display = 'none'; searchResults.innerHTML = '';
 });
 
-// Build genre pills in search page
+// YouTube genre searches
+const YT_GENRES = [
+  { tag: 'pop music hits',      label: 'Pop',        color: 'linear-gradient(135deg,#3b82f6,#1d4ed8)' },
+  { tag: 'electronic music',    label: 'Electronic', color: 'linear-gradient(135deg,#8b5cf6,#6d28d9)' },
+  { tag: 'rock songs',          label: 'Rock',       color: 'linear-gradient(135deg,#ef4444,#b91c1c)' },
+  { tag: 'hip hop rap',         label: 'Hip-Hop',    color: 'linear-gradient(135deg,#ec4899,#be185d)' },
+  { tag: 'jazz music',          label: 'Jazz',       color: 'linear-gradient(135deg,#10b981,#065f46)' },
+  { tag: 'lo-fi chill beats',   label: 'Lo-Fi',      color: 'linear-gradient(135deg,#6366f1,#312e81)' },
+  { tag: 'dance music',         label: 'Dance',      color: 'linear-gradient(135deg,#f59e0b,#b45309)' },
+  { tag: 'reggaeton latino',    label: 'Latino',     color: 'linear-gradient(135deg,#fbbf24,#d97706)' },
+  { tag: 'classical music',     label: 'Clásica',    color: 'linear-gradient(135deg,#a78bfa,#5b21b6)' },
+  { tag: 'folk acoustic',       label: 'Folk',       color: 'linear-gradient(135deg,#f97316,#c2410c)' },
+  { tag: 'metal heavy',         label: 'Metal',      color: 'linear-gradient(135deg,#475569,#0f172a)' },
+  { tag: 'r&b soul music',      label: 'R&B / Soul', color: 'linear-gradient(135deg,#e879f9,#86198f)' },
+  { tag: 'reggae music',        label: 'Reggae',     color: 'linear-gradient(135deg,#22c55e,#15803d)' },
+  { tag: 'country music',       label: 'Country',    color: 'linear-gradient(135deg,#84cc16,#3f6212)' },
+  { tag: 'blues music',         label: 'Blues',      color: 'linear-gradient(135deg,#38bdf8,#075985)' },
+  { tag: 'ambient relaxing',    label: 'Ambient',    color: 'linear-gradient(135deg,#67e8f9,#0e7490)' },
+];
+
 function buildGenreGrid() {
   if (!genreGrid) return;
   genreGrid.innerHTML = '';
-  JamendoEngine.getGenres().forEach(g => {
+  YT_GENRES.forEach(g => {
     const btn = document.createElement('button');
     btn.className = 'genre-pill';
     btn.style.background = g.color;
@@ -690,6 +720,7 @@ audioEl.addEventListener('timeupdate', function() {
 }, { passive: true });
 
 audioEl.addEventListener('ended', function() {
+  if (window._droplyYTActive) return; // YT is in control, ignore native audio events
   isPlaying = false;
   if (repeatMode) { this.currentTime = 0; this.play().then(() => { isPlaying = true; updatePlayIcons(true); }).catch(() => { updatePlayIcons(false); }); }
   else { updatePlayIcons(false); playNext(); }
@@ -746,7 +777,7 @@ function loadTrack(item, fromQueue = false, newPlaylistContext = null) {
 
   // Playlist context
   if (!fromQueue) {
-    playlist = newPlaylistContext || _jamFeatured.filter(Boolean);
+    playlist = newPlaylistContext || _ytFeatured.filter(Boolean);
     currentTrackIdx = playlist.findIndex(p => p.file === item.file);
     if (currentTrackIdx < 0) { playlist = [item, ...playlist]; currentTrackIdx = 0; }
   } else {
@@ -762,7 +793,7 @@ function loadTrack(item, fromQueue = false, newPlaylistContext = null) {
 
   // UI — sheet
   if (sheetCover) sheetCover.src = cover;
-  if (sheetCategory) sheetCategory.textContent = item.source === 'jamendo' ? 'Jamendo · CC ' + (item.license || '') : (item.category || '');
+  if (sheetCategory) sheetCategory.textContent = (item.source === 'youtube' || item._source === 'youtube') ? 'YouTube · Online' : (item.category || '');
   if (sheetTitle) sheetTitle.textContent  = item.title;
   if (sheetArtist) sheetArtist.textContent = item.artist;
   animateBackgroundTransition(cover);
@@ -880,7 +911,7 @@ function playPrev() {
 }
 
 function _findTrack(file) {
-  return _jamFeatured.find(t => t.file === file)
+  return _ytFeatured.find(t => t.file === file)
     || localTracks.find(t => t.file === file)
     || playlists.flatMap(p => p.tracks).find(t => t?.file === file)
     || null;
@@ -985,7 +1016,7 @@ function renderFavoritos() {
   if (!favoritosList) return;
   favoritosList.innerHTML = '';
   // Collect liked tracks from all sources
-  const allKnown = [..._jamFeatured, ...localTracks,
+  const allKnown = [..._ytFeatured, ...localTracks,
     ...playlists.flatMap(p => p.tracks.filter(t => typeof t === 'object'))
   ];
   const seen = new Set();
@@ -1052,7 +1083,7 @@ function renderPlaylists() {
   playlistsGrid.innerHTML = '';
   if (playlists.length === 0) {
     playlistsGrid.innerHTML = `<div class="playlists-empty" style="grid-column:1/-1"><p>No tienes playlists aún.<br>Crea una o importa desde Spotify ↓</p><button class="btn-create-playlist" id="plImportSpotifyBtn" style="margin-top:1rem"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Importar de Spotify</button></div>`;
-    $('plImportSpotifyBtn')?.addEventListener('click', () => showPage('pageImport'));
+
     return;
   }
   playlists.forEach(pl => {
@@ -1239,105 +1270,6 @@ function addLocalFiles(files) {
 
 /* ══════════════════════════════════════════════════
    18. IMPORT PLAYLIST (Exportify CSV)
-══════════════════════════════════════════════════ */
-function renderImportPage() {
-  const page = $('pageImport'); if (!page) return;
-  // Already rendered by HTML
-}
-
-function setupImportPage() {
-  const dropZone   = $('importDropZone');
-  const fileInput  = $('importFileInput');
-  const btnBrowse  = $('importBrowseBtn');
-  const progress   = $('importProgress');
-  const progressBar= $('importProgressFill');
-  const progressTxt= $('importProgressTxt');
-  const resultBox  = $('importResult');
-
-  if (!dropZone || !fileInput) return;
-
-  // Drag & drop
-  ['dragenter','dragover'].forEach(ev => {
-    dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-  });
-  ['dragleave','drop'].forEach(ev => {
-    dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
-  });
-  dropZone.addEventListener('drop', e => {
-    const file = e.dataTransfer.files[0]; if (file) handleImportFile(file);
-  });
-  dropZone.addEventListener('click', () => fileInput.click());
-  btnBrowse?.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
-  fileInput.addEventListener('change', e => { const file = e.target.files[0]; if (file) handleImportFile(file); fileInput.value = ''; });
-
-  async function handleImportFile(file) {
-    let csvText;
-    try { csvText = await PlaylistImporter.readFileAsText(file); }
-    catch (e) { showToast(e.message, 'error'); return; }
-
-    const playlistName = file.name.replace(/\.csv$/i, '').replace(/[-_]/g, ' ').trim() || 'Mi playlist de Spotify';
-    if (progress)  progress.style.display = '';
-    if (resultBox) resultBox.style.display = 'none';
-    dropZone.style.opacity = '.5';
-
-    let lastPct = 0;
-    try {
-      const result = await PlaylistImporter.importPlaylist(csvText, playlistName, (prog) => {
-        const pct = Math.round((prog.done / prog.total) * 100);
-        if (progressBar) progressBar.style.width = pct + '%';
-        if (progressTxt) progressTxt.textContent = `Buscando canciones… ${prog.done}/${prog.total} (${prog.matched} encontradas)`;
-      });
-
-      // Create playlist
-      if (result.matched.length > 0) {
-        const pl = createPlaylist(result.playlistName);
-        pl.importedFrom = 'spotify';
-        result.matched.forEach(track => { pl.tracks.push(track); });
-        savePlaylists();
-        showToast(`Playlist "${pl.name}" importada con ${result.matched.length} canciones`, 'success');
-      }
-
-      // Show result
-      if (resultBox) {
-        resultBox.style.display = '';
-        resultBox.innerHTML = `
-          <div class="import-result-card">
-            <div class="import-result-icon">✅</div>
-            <h3 class="import-result-title">Importación completada</h3>
-            <div class="import-result-stats">
-              <div class="import-stat"><span class="import-stat-num">${result.total}</span><span class="import-stat-lbl">Total</span></div>
-              <div class="import-stat import-stat--good"><span class="import-stat-num">${result.matched.length}</span><span class="import-stat-lbl">Encontradas</span></div>
-              <div class="import-stat import-stat--bad"><span class="import-stat-num">${result.unmatched.length}</span><span class="import-stat-lbl">No disponibles</span></div>
-              <div class="import-stat"><span class="import-stat-num">${result.matchRate}%</span><span class="import-stat-lbl">Match</span></div>
-            </div>
-            ${result.unmatched.length > 0 ? `
-            <details class="import-unmatched">
-              <summary>Ver canciones no encontradas (${result.unmatched.length})</summary>
-              <ul class="import-unmatched-list">
-                ${result.unmatched.slice(0,20).map(t => `<li>${t.trackName} — ${t.artistName}</li>`).join('')}
-                ${result.unmatched.length > 20 ? `<li style="color:var(--text-soft)">…y ${result.unmatched.length - 20} más</li>` : ''}
-              </ul>
-            </details>` : ''}
-            <p class="import-result-note">Las canciones no encontradas son exclusivas de Spotify y no tienen versión libre disponible en Jamendo. Esto es normal.</p>
-            <div class="import-result-actions">
-              <button class="btn-hero" id="importGoToPlaylist">Ver playlist</button>
-              <button class="btn-outline-sm" id="importNewFile">Importar otra</button>
-            </div>
-          </div>`;
-        $('importGoToPlaylist')?.addEventListener('click', () => { showPage('pagePlaylists'); });
-        $('importNewFile')?.addEventListener('click', () => { resultBox.style.display = 'none'; dropZone.style.opacity = ''; });
-      }
-    } catch (e) {
-      showToast(`Error: ${e.message}`, 'error');
-      if (progress) progress.style.display = 'none';
-      dropZone.style.opacity = '';
-    }
-    if (progress) progress.style.display = 'none';
-    dropZone.style.opacity = '';
-  }
-}
-
-/* ══════════════════════════════════════════════════
    19. MEDIA SESSION
 ══════════════════════════════════════════════════ */
 function setupMediaSession(item) {
@@ -1390,7 +1322,6 @@ window.addEventListener('scroll', () => {
   renderQueueList();
   renderHomeScreen();
   initChangelog();
-  setupImportPage();
   updateBottomNavSlider();
 
   audioEl?.addEventListener('timeupdate', () => {
